@@ -1,0 +1,8 @@
+{
+  "modules": [
+    "multi-dc-scale",
+    "governance-policy",
+    "advanced-data-protection-transform",
+    "advanced-data-protection-key-management"
+  ]
+}

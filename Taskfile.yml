@@ -1,0 +1,43 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default:
+    deps:
+      - up
+
+  up:
+    deps:
+      - docker_compose
+      - tf_init
+    cmds:
+      - terraform apply -auto-approve
+
+  down:
+    cmds:
+      - docker compose down
+      - rm -rf ./logs/audit.log ./.terraform ./terraform.tfstate ./terraform.tfstate.backup
+    status:
+      - "! curl http://127.0.0.1:8200/v1/sys/health"
+
+  docker_compose:
+    run: once
+    cmds:
+      - rm -rf ./terraform.tfstate ./terraform.tfstate.backup ./.terraform
+      - docker compose up -d
+    silent: true
+    status:
+      - curl http://127.0.0.1:8200/v1/sys/health
+
+  tf_init:
+    internal: true
+    run: once
+    deps:
+      - docker_compose
+    cmds:
+      - terraform init
+      - terraform apply -auto-approve
+    status:
+      - test -f ./terraform.tfstate
+      - test -d ./.terraform

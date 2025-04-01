@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export VAULT_FORMAT=json
+
+ROLE_ID="$(terraform output -json approle | jq -r .sample_user.role_id)"
+SECRET_ID="$(terraform output -json approle | jq -r .sample_user.secret_id)"
+printf 'Username: %s\n' "$ROLE_ID"
+printf 'Password: %s\n' "$SECRET_ID"
+vault write auth/approle/login role_id="$ROLE_ID" secret_id="$SECRET_ID" | jq -r '.auth.client_token'
+unset ROLE_ID SECRET_ID
