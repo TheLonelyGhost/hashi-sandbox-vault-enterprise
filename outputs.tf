@@ -11,12 +11,12 @@ output "root_token" {
   description = "Root token for the vault cluster"
   value       = nonsensitive(vaultstarter_init.base.root_token)
 
-  depends_on = [null_resource.root_token]
+  depends_on = [terraform_data.root_token]
 }
 
 output "shamir_keys" {
   description = "Shamir unseal keys"
   value       = nonsensitive(vaultstarter_init.base.keys)
 
-  depends_on = [null_resource.root_token]
+  depends_on = [terraform_data.root_token]
 }

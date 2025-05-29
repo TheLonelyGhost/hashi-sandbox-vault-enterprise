@@ -2,10 +2,6 @@ terraform {
   required_version = "~> 1.9"
 
   required_providers {
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2.3"
-    }
     vault = {
       source  = "hashicorp/vault"
       version = "~> 4.0"
@@ -31,15 +27,13 @@ resource "vaultstarter_unseal" "base" {
   keys             = vaultstarter_init.base.keys
 }
 
-resource "null_resource" "root_token" {
-  triggers = {
-    root_token = vaultstarter_init.base.root_token
-  }
+resource "terraform_data" "root_token" {
+  input = vaultstarter_init.base.root_token
 
   depends_on = [vaultstarter_unseal.base]
 }
 
 provider "vault" {
   address = "http://127.0.0.1:8200"
-  token   = null_resource.root_token.triggers.root_token
+  token   = terraform_data.root_token.input
 }
