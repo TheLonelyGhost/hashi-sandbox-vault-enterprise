@@ -1,7 +1,7 @@
 ---
 services:
   vault:
-    image: index.docker.io/hashicorp/vault-enterprise:1.16-ent
+    image: index.docker.io/hashicorp/vault-enterprise:1.19-ent
     environment:
       VAULT_LICENSE: ${VAULT_LICENSE}
       # VAULT_DEV_ROOT_TOKEN_ID: root

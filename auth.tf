@@ -28,12 +28,39 @@ resource "vault_policy" "admin" {
   EOH
 }
 
+data "vault_policy_document" "kv-monitor" {
+  rule {
+    description  = "Basic support for Vault Event Notifications feature"
+    path         = "sys/events/subscribe/*"
+    capabilities = ["read"]
+  }
+
+  rule {
+    path         = "${vault_mount.kv.path}/*"
+    capabilities = ["read", "list", "subscribe"]
+    subscribe_event_types = [
+      "kv-v2/data-delete",
+      "kv-v2/data-patch",
+      "kv-v2/data-write",
+      "kv-v2/delete",
+      "kv-v2/destroy",
+    ]
+  }
+}
+resource "vault_policy" "kv-monitor" {
+  name   = "kv-monitor"
+  policy = data.vault_policy_document.kv-monitor.hcl
+}
+
 resource "vault_approle_auth_backend_role" "sample" {
   backend   = vault_auth_backend.approle.path
   role_name = "sample"
   token_policies = [
-    vault_policy.admin.name,
+    # vault_policy.admin.name,
+    vault_policy.kv-monitor.name,
   ]
+
+  token_ttl = 60 * 5 # 5 minutes
 }
 resource "vault_approle_auth_backend_role_secret_id" "sample" {
   backend   = vault_auth_backend.approle.path

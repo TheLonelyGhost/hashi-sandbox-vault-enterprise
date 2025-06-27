@@ -1,0 +1,29 @@
+{
+  "id": "8af4027d-bd90-8412-291f-baa413222f87",
+  "source": "vault://bd73b394-754c-3ef2-58d9-8454d03d95f4",
+  "specversion": "1.0",
+  "type": "*",
+  "data": {
+    "event": {
+      "id": "8af4027d-bd90-8412-291f-baa413222f87",
+      "metadata": {
+        "current_version": "1",
+        "data_path": "kv/my-thing/data/foo",
+        "modified": "true",
+        "oldest_version": "0",
+        "operation": "data-write",
+        "path": "kv/my-thing/data/foo"
+      }
+    },
+    "event_type": "kv-v2/data-write",
+    "plugin_info": {
+      "mount_class": "secret",
+      "mount_accessor": "kv_c4bcad94",
+      "mount_path": "kv/my-thing/",
+      "plugin": "kv",
+      "version": "2"
+    }
+  },
+  "datacontentype": "application/cloudevents",
+  "time": "2025-05-02T16: 06: 30.493509212Z"
+}
