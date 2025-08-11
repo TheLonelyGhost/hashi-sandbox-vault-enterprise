@@ -1,5 +1,7 @@
 # Vault Event Notifications
 
+https://developer.hashicorp.com/vault/docs/concepts/events
+
 ## Feature overview
 
 - What are events?
