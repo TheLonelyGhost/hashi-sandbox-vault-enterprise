@@ -37,7 +37,7 @@ data "vault_policy_document" "kv-monitor" {
 
   rule {
     path         = "${vault_mount.kv.path}/*"
-    capabilities = ["read", "list", "subscribe"]
+    capabilities = ["read", "update", "create", "list", "subscribe"]
     subscribe_event_types = [
       "kv-v2/data-delete",
       "kv-v2/data-patch",
