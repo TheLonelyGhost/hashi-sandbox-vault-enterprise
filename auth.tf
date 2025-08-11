@@ -60,7 +60,7 @@ resource "vault_approle_auth_backend_role" "sample" {
     vault_policy.kv-monitor.name,
   ]
 
-  token_ttl = 60 * 5 # 5 minutes
+  token_ttl = 30
 }
 resource "vault_approle_auth_backend_role_secret_id" "sample" {
   backend   = vault_auth_backend.approle.path
