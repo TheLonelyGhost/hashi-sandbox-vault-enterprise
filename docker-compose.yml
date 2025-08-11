@@ -26,6 +26,7 @@ services:
       - "8200:8200"
     volumes:
       - ./vault-config:/vault/config:ro
+      - ./vault-data:/vault/file
       - ./logs:/var/log/vault:rw
     restart: always
     entrypoint: vault server -config=/vault/config/config.hcl
