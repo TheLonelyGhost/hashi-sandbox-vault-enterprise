@@ -17,7 +17,7 @@ tasks:
   down:
     cmds:
       - docker compose down
-      - rm -rf ./logs/audit.log ./.terraform ./terraform.tfstate ./terraform.tfstate.backup
+      - rm -rf ./logs/audit.log ./.terraform ./terraform.tfstate ./terraform.tfstate.backup ./vault-data
     status:
       - "! curl http://127.0.0.1:8200/v1/sys/health"
 
@@ -25,7 +25,9 @@ tasks:
     run: once
     cmds:
       - rm -rf ./terraform.tfstate ./terraform.tfstate.backup ./.terraform
+      - mkdir -p ./vault-data ./vault-config ./logs
       - docker compose up -d
+      - sleep 3
     silent: true
     status:
       - curl http://127.0.0.1:8200/v1/sys/health

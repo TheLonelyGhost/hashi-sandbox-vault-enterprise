@@ -56,11 +56,11 @@ resource "vault_approle_auth_backend_role" "sample" {
   backend   = vault_auth_backend.approle.path
   role_name = "sample"
   token_policies = [
-    # vault_policy.admin.name,
-    vault_policy.kv-monitor.name,
+    vault_policy.admin.name,
+    # vault_policy.kv-monitor.name,
   ]
 
-  token_ttl = 30
+  token_ttl = 900
 }
 resource "vault_approle_auth_backend_role_secret_id" "sample" {
   backend   = vault_auth_backend.approle.path
