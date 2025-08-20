@@ -4,42 +4,80 @@ version: "3"
 
 tasks:
   default:
-    deps:
-      - up
+    cmds:
+      - task: up
 
   up:
-    deps:
-      - docker_compose
-      - tf_init
     cmds:
-      - terraform apply -auto-approve
+      - task: terraform:apply
+
+  terraform:apply:
+    run: once
+    deps:
+      - compose:up
+      - terraform:init
+    cmds:
+      - cmd: terraform apply -auto-approve
+    sources:
+      - '*.tf'
+    generates:
+      - terraform.tfstate
 
   down:
     cmds:
-      - docker compose down
-      - rm -rf ./logs/audit.log ./.terraform ./terraform.tfstate ./terraform.tfstate.backup ./vault-data
-    status:
-      - "! curl http://127.0.0.1:8200/v1/sys/health"
+      - task: compose:down
+      - task: terraform:reset
+      - task: vault:reset
 
-  docker_compose:
+  compose:down:
     run: once
     cmds:
-      - rm -rf ./terraform.tfstate ./terraform.tfstate.backup ./.terraform
-      - mkdir -p ./vault-data ./vault-config ./logs
-      - docker compose up -d
-      - sleep 3
+      - cmd: docker compose down
+    status:
+      - test -z "$(docker compose ps --format json)"
+
+  compose:up:
+    run: once
+    cmds:
+      - cmd: mkdir -p ./vault-data ./vault-config ./logs
+      - cmd: docker compose up -d
+      - cmd: |
+          sleep 1 # Give it a moment to start listening on the port
+          for i in {1..5}; do
+            if curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200" >/dev/null 2>/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          printf 'ERROR: Vault process did not start. Check the logs\n' >&2
+          exit 1
     silent: true
     status:
-      - curl http://127.0.0.1:8200/v1/sys/health
+      - test -n "$(docker compose ps --format json)"
+      - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200"'
 
-  tf_init:
-    internal: true
-    run: once
+  vault:reset:
     deps:
-      - docker_compose
+      - terraform:reset
     cmds:
-      - terraform init
-      - terraform apply -auto-approve
+      - cmd: rm -rf ./logs/audit.log ./vault-data
     status:
-      - test -f ./terraform.tfstate
-      - test -d ./.terraform
+      - '! test -d ./vault-data'
+      - '! test -f ./logs/audit.log'
+
+  terraform:reset:
+    cmds:
+      - rm -rf ./.terraform
+      - rm -f ./terraform.tfstate ./terraform.tfstate.backup
+    status:
+      - '! test -d ./.terraform'
+      - '! test -f ./terraform.tfstate'
+      - '! test -f ./terraform.tfstate.backup'
+
+  terraform:init:
+    deps:
+      - compose:up
+    cmds:
+      - cmd: terraform init
+    status:
+      - 'test -d ./.terraform'
