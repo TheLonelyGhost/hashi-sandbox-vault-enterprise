@@ -46,6 +46,14 @@ data "vault_policy_document" "kv-monitor" {
       "kv-v2/destroy",
     ]
   }
+
+  rule {
+    path         = "*"
+    capabilities = ["read", "update", "create", "list", "subscribe"]
+    subscribe_event_types = [
+      "*",
+    ]
+  }
 }
 resource "vault_policy" "kv-monitor" {
   name   = "kv-monitor"
@@ -56,8 +64,8 @@ resource "vault_approle_auth_backend_role" "sample" {
   backend   = vault_auth_backend.approle.path
   role_name = "sample"
   token_policies = [
-    vault_policy.admin.name,
-    # vault_policy.kv-monitor.name,
+    # vault_policy.admin.name,
+    vault_policy.kv-monitor.name,
   ]
 
   token_ttl = 900
