@@ -1,5 +1,5 @@
 ui           = true
-cluster_addr = "https://127.0.0.1:8200"
+cluster_addr = "https://127.0.0.1:8201"
 api_addr     = "http://127.0.0.1:8200"
 
 disable_mlock = true
@@ -17,7 +17,8 @@ listener "tcp" {
   }
 }
 
-cluster_name = "my-sandbox"
+cluster_name     = "my-sandbox"
+plugin_directory = "/vault/plugins"
 
 default_lease_ttl = "168h"
 max_lease_ttl     = "720h"

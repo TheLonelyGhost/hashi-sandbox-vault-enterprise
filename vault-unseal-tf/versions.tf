@@ -2,6 +2,10 @@ terraform {
   required_version = "~> 1.10"
 
   required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
     vault = {
       source  = "hashicorp/vault"
       version = "~> 5.0"
@@ -14,28 +18,26 @@ terraform {
 }
 
 provider "vaultstarter" {
-  vault_addr = "http://127.0.0.1:8200"
+  vault_addr = "http://127.0.0.1:8300"
 }
 
 resource "vaultstarter_init" "base" {
-  recovery_shares    = 1
-  recovery_threshold = 1
-  secret_shares      = 0
-  secret_threshold   = 0
+  secret_shares    = 1
+  secret_threshold = 1
 }
-# resource "vaultstarter_unseal" "base" {
-#   secret_shares    = vaultstarter_init.base.secret_shares
-#   secret_threshold = vaultstarter_init.base.secret_threshold
-#   keys             = vaultstarter_init.base.keys
-# }
+resource "vaultstarter_unseal" "base" {
+  secret_shares    = vaultstarter_init.base.secret_shares
+  secret_threshold = vaultstarter_init.base.secret_threshold
+  keys             = vaultstarter_init.base.keys
+}
 
 resource "terraform_data" "root_token" {
   input = vaultstarter_init.base.root_token
 
-  # depends_on = [vaultstarter_unseal.base]
+  depends_on = [vaultstarter_unseal.base]
 }
 
 provider "vault" {
-  address = "http://127.0.0.1:8200"
+  address = "http://127.0.0.1:8300"
   token   = terraform_data.root_token.input
 }

@@ -1,7 +1,37 @@
 ---
 services:
+  vault-unseal:
+    image: docker.io/hashicorp/vault-enterprise:1.19-ent
+    environment:
+      VAULT_LICENSE: ${VAULT_LICENSE}
+      # VAULT_DEV_ROOT_TOKEN_ID: root
+      # VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      # VAULT_LOCAL_CONFIG: |
+      #   {
+      #     "disable_mlock": true,
+      #     "storage": {
+      #       "raft": {
+      #         "path": "/vault/file"
+      #       }
+      #     },
+      #     "api_addr": "http://127.0.0.1:8200",
+      #     "cluster_addr": "https://127.0.0.1:8201",
+      #     "default_lease_ttl": "168h",
+      #     "max_lease_ttl": "720h",
+      #     "ui": true
+      #   }
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8300:8300"
+    volumes:
+      - ./vault-alt-config:/vault/config:ro
+      - ./vault-alt-data:/vault/file
+    restart: always
+    entrypoint: vault server -config=/vault/config
+
   vault:
-    image: index.docker.io/hashicorp/vault-enterprise:1.19-ent
+    image: docker.io/hashicorp/vault-enterprise:1.19-ent
     environment:
       VAULT_LICENSE: ${VAULT_LICENSE}
       # VAULT_DEV_ROOT_TOKEN_ID: root
@@ -27,6 +57,13 @@ services:
     volumes:
       - ./vault-config:/vault/config:ro
       - ./vault-data:/vault/file
+      - ./plugins:/vault/plugins
       - ./logs:/var/log/vault:rw
     restart: always
-    entrypoint: vault server -config=/vault/config/config.hcl
+    entrypoint: vault server -config=/vault/config/
+  # openldap:
+  #   image: ghcr.io/rroemhild/docker-test-openldap:latest
+  #   environment: {}
+  #   ports:
+  #     - 10389:10389
+  #     - 10686:10686

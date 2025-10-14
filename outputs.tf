@@ -14,9 +14,9 @@ output "root_token" {
   depends_on = [terraform_data.root_token]
 }
 
-output "shamir_keys" {
-  description = "Shamir unseal keys"
-  value       = nonsensitive(vaultstarter_init.base.keys)
+output "recovery_keys" {
+  description = "Recovery keys"
+  value       = nonsensitive(vaultstarter_init.base.recovery_keys)
 
   depends_on = [terraform_data.root_token]
 }

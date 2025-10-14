@@ -17,17 +17,95 @@ tasks:
       - compose:up
       - terraform:init
     cmds:
+      - task: unseal:terraform:apply
       - cmd: terraform apply -auto-approve
     sources:
       - '*.tf'
     generates:
       - terraform.tfstate
 
+  unseal:up:
+    run: once
+    deps:
+      - unseal:compose:up
+      - unseal:terraform:apply
+
+  unseal:terraform:init:
+    run: once
+    dir: ./vault-unseal-tf
+    deps:
+      - unseal:compose:up
+    cmds:
+      - cmd: terraform init
+    status:
+      - 'test -d ./.terraform'
+
+  unseal:terraform:apply:
+    run: once
+    dir: ./vault-unseal-tf
+    deps:
+      - unseal:compose:up
+      - unseal:terraform:init
+    cmds:
+      - cmd: terraform apply -auto-approve
+    sources:
+      - '*.tf'
+    generates:
+      - terraform.tfstate
+
+  unseal:compose:up:
+    run: once
+    cmds:
+      - cmd: mkdir -p ./vault-alt-data ./vault-alt-config
+      - cmd: docker compose up -d vault-unseal
+      - cmd: |
+          sleep 1 # Give it a moment to start listening on the port
+          for i in {1..5}; do
+            if curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8300/v1/sys/health?uninitcode=200&sealedcode=200" >/dev/null 2>/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          printf 'ERROR: Vault process did not start. Check the container logs\n' >&2
+          exit 1
+    silent: true
+    status:
+      - test -n "$(docker compose ps --format json)"
+      - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8300/v1/sys/health?uninitcode=200&sealedcode=200"'
+
+  unseal:reset:
+    run: once
+    deps:
+      - unseal:terraform:reset
+      - unseal:vault:reset
+
+  unseal:vault:reset:
+    run: once
+    cmds:
+      - cmd: rm -rf ./vault-alt-data
+    status:
+      - '! test -d ./vault-alt-data'
+
+  unseal:terraform:reset:
+    run: once
+    dir: ./vault-unseal-tf
+    deps:
+      - compose:down
+    cmds:
+      - cmd: rm -rf ./terraform.tfstate ./terraform.tfstate.backup ./.terraform/
+      - cmd: rm -f ../vault-config/unseal.hcl
+    status:
+      - '! test -d ./.terraform'
+      - '! test -f ./terraform.tfstate'
+      - '! test -f ./terraform.tfstate.backup'
+      - '! test -f ../vault-config/unseal.hcl'
+
   down:
     cmds:
       - task: compose:down
       - task: terraform:reset
       - task: vault:reset
+      - task: unseal:reset
 
   compose:down:
     run: once
@@ -38,6 +116,8 @@ tasks:
 
   compose:up:
     run: once
+    deps:
+      - unseal:up
     cmds:
       - cmd: mkdir -p ./vault-data ./vault-config ./logs
       - cmd: docker compose up -d
@@ -51,16 +131,18 @@ tasks:
           done
           printf 'ERROR: Vault process did not start. Check the logs\n' >&2
           exit 1
+      # - cmd: env VAULT_TOKEN='' VAULT_ADDR='http://127.0.0.1:8200' VAULT_FORMAT='json' vault operator init -recovery-shares=2 -recovery-threshold=1 > ./vaultinit.json
     silent: true
     status:
       - test -n "$(docker compose ps --format json)"
       - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200"'
+      # - test -f vaultinit.json
 
   vault:reset:
     deps:
       - terraform:reset
     cmds:
-      - cmd: rm -rf ./logs/audit.log ./vault-data
+      - cmd: rm -rf ./logs/audit.log ./vault-data # ./vaultinit.json
     status:
       - '! test -d ./vault-data'
       - '! test -f ./logs/audit.log'
