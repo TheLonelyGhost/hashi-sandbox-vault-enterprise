@@ -18,7 +18,7 @@ terraform {
 }
 
 provider "vaultstarter" {
-  vault_addr = "http://127.0.0.1:8300"
+  vault_addr = var.vault_addr
 }
 
 resource "vaultstarter_init" "base" {
@@ -38,6 +38,6 @@ resource "terraform_data" "root_token" {
 }
 
 provider "vault" {
-  address = "http://127.0.0.1:8300"
+  address = var.vault_addr
   token   = terraform_data.root_token.input
 }

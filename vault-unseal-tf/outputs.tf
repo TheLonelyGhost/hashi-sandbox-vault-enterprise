@@ -27,3 +27,34 @@ resource "local_sensitive_file" "unseal_hcl" {
 
   filename = "${path.module}/../vault-config/unseal.hcl"
 }
+
+resource "local_sensitive_file" "server_pk" {
+  content         = vault_pki_secret_backend_cert.vault.private_key
+  file_permission = "0600"
+
+  filename = "${path.module}/../vault-config/server.pem"
+}
+
+resource "local_file" "server_crt" {
+  content         = vault_pki_secret_backend_cert.vault.certificate
+  file_permission = "0644"
+
+  filename = "${path.module}/../vault-config/server.crt"
+}
+
+resource "local_file" "server_ca" {
+  content         = vault_pki_secret_backend_cert.vault.ca_chain
+  file_permission = "0644"
+
+  filename = "${path.module}/../vault-config/server.ca.crt"
+}
+
+resource "local_file" "server_crt_bundle" {
+  content = join("\n", [
+    vault_pki_secret_backend_cert.vault.certificate,
+    vault_pki_secret_backend_cert.vault.ca_chain,
+  ])
+  file_permission = "0644"
+
+  filename = "${path.module}/../vault-config/server.bundle.crt"
+}

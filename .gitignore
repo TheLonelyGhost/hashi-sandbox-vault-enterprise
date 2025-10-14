@@ -41,4 +41,10 @@ terraform.rc
 /logs
 /vault_license.hclic
 /.task/
-vaultinit.json
+*.crt
+*.pem
+.env
+/vault-config/unseal.hcl
+
+/vault-data/
+/vault-alt-data/

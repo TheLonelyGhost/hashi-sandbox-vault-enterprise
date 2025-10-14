@@ -2,40 +2,39 @@ terraform {
   required_version = "~> 1.10"
 
   required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
     vault = {
       source  = "hashicorp/vault"
       version = "~> 5.0"
     }
-    vaultstarter = {
-      source  = "andrei-funaru/vault-starter"
-      version = "~> 0.2.4"
+    vaultoperator = {
+      source  = "rickardgranberg/vaultoperator"
+      version = "~> 0.1.11"
     }
   }
 }
 
-provider "vaultstarter" {
-  vault_addr = "http://127.0.0.1:8200"
+provider "vaultoperator" {
+  vault_addr        = var.vault_addr
+  vault_skip_verify = true
 }
 
-resource "vaultstarter_init" "base" {
+resource "vaultoperator_init" "base" {
   recovery_shares    = 1
   recovery_threshold = 1
   secret_shares      = 0
   secret_threshold   = 0
 }
-# resource "vaultstarter_unseal" "base" {
-#   secret_shares    = vaultstarter_init.base.secret_shares
-#   secret_threshold = vaultstarter_init.base.secret_threshold
-#   keys             = vaultstarter_init.base.keys
-# }
 
 resource "terraform_data" "root_token" {
-  input = vaultstarter_init.base.root_token
-
-  # depends_on = [vaultstarter_unseal.base]
+  input = vaultoperator_init.base.root_token
 }
 
 provider "vault" {
-  address = "http://127.0.0.1:8200"
-  token   = terraform_data.root_token.input
+  address      = var.vault_addr
+  token        = terraform_data.root_token.input
+  ca_cert_file = "${path.module}/vault-config/server.ca.crt"
 }

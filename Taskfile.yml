@@ -94,11 +94,16 @@ tasks:
     cmds:
       - cmd: rm -rf ./terraform.tfstate ./terraform.tfstate.backup ./.terraform/
       - cmd: rm -f ../vault-config/unseal.hcl
+      - cmd: rm -f ../vault-config/server.crt ../vault-config/server.bundle.crt ../vault-config/server.ca.crt ../vault-config/server.pem
     status:
       - '! test -d ./.terraform'
       - '! test -f ./terraform.tfstate'
       - '! test -f ./terraform.tfstate.backup'
       - '! test -f ../vault-config/unseal.hcl'
+      - '! test -f ../vault-config/server.crt'
+      - '! test -f ../vault-config/server.bundle.crt'
+      - '! test -f ../vault-config/server.ca.crt'
+      - '! test -f ../vault-config/server.pem'
 
   down:
     cmds:
@@ -124,7 +129,7 @@ tasks:
       - cmd: |
           sleep 1 # Give it a moment to start listening on the port
           for i in {1..5}; do
-            if curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200" >/dev/null 2>/dev/null; then
+            if curl --connect-timeout 10 --fail --cacert ./vault-config/server.ca.crt --silent "https://127.0.0.1:8200/v1/sys/health?uninitcode=200" >/dev/null 2>/dev/null; then
               exit 0
             fi
             sleep 1
@@ -134,7 +139,7 @@ tasks:
     silent: true
     status:
       - test -n "$(docker compose ps --format json)"
-      - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200"'
+      - 'curl --connect-timeout 10 --fail --cacert ./vault-config/server.ca.crt --silent "https://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200"'
 
   vault:reset:
     deps:
@@ -148,11 +153,12 @@ tasks:
   terraform:reset:
     cmds:
       - rm -rf ./.terraform
-      - rm -f ./terraform.tfstate ./terraform.tfstate.backup
+      - rm -f ./terraform.tfstate ./terraform.tfstate.backup ./.env
     status:
       - '! test -d ./.terraform'
       - '! test -f ./terraform.tfstate'
       - '! test -f ./terraform.tfstate.backup'
+      - '! test -f ./.env'
 
   terraform:init:
     deps:

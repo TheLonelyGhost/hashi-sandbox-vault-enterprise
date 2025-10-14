@@ -1,6 +1,6 @@
 ui           = true
 cluster_addr = "https://127.0.0.1:8201"
-api_addr     = "http://127.0.0.1:8200"
+api_addr     = "https://127.0.0.1:8200"
 
 disable_mlock = true
 
@@ -9,8 +9,10 @@ storage "raft" {
 }
 
 listener "tcp" {
-  address     = "0.0.0.0:8200"
-  tls_disable = true
+  address = "0.0.0.0:8200"
+
+  tls_cert_file = "/vault/config/server.bundle.crt"
+  tls_key_file  = "/vault/config/server.pem"
 
   telemetry {
     unauthenticated_metrics_access = true
