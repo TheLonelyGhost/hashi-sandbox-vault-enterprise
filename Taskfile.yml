@@ -131,18 +131,16 @@ tasks:
           done
           printf 'ERROR: Vault process did not start. Check the logs\n' >&2
           exit 1
-      # - cmd: env VAULT_TOKEN='' VAULT_ADDR='http://127.0.0.1:8200' VAULT_FORMAT='json' vault operator init -recovery-shares=2 -recovery-threshold=1 > ./vaultinit.json
     silent: true
     status:
       - test -n "$(docker compose ps --format json)"
       - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200"'
-      # - test -f vaultinit.json
 
   vault:reset:
     deps:
       - terraform:reset
     cmds:
-      - cmd: rm -rf ./logs/audit.log ./vault-data # ./vaultinit.json
+      - cmd: rm -rf ./logs/audit.log ./vault-data
     status:
       - '! test -d ./vault-data'
       - '! test -f ./logs/audit.log'
