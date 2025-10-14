@@ -39,6 +39,7 @@ terraform.rc
 
 # End of https://www.toptal.com/developers/gitignore/api/terraform
 /logs
+/plugins/
 /vault_license.hclic
 /.task/
 *.crt
