@@ -20,3 +20,15 @@ resource "vault_approle_auth_backend_role_secret_id" "sample" {
     "generated-by" = "terraform"
   })
 }
+
+resource "vault_auth_backend" "tls" {
+  type = "cert"
+  path = "tls"
+}
+
+resource "vault_cert_auth_backend_role" "sample" {
+  backend = vault_auth_backend.tls.path
+
+  name        = "sample"
+  certificate = vault_pki_secret_backend_root_cert.main.certificate
+}

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export VAULT_CLIENT_CERT=./tmp/tls/client.certificate.pem
+export VAULT_CLIENT_KEY=./tmp/tls/client.private.pem
+
+if ! [ -e "${VAULT_CLIENT_CERT}" ] || ! [ -e "${VAULT_CLIENT_KEY}" ]; then
+	printf 'No client TLS certificate materials found. Generating...\n' >&2
+	set -x
+	go run ./go/generate-client-cert.go
+else
+	set -x
+fi
+
+vault login -method=cert -path=tls -token-only name=sample
