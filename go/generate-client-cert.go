@@ -1,17 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -91,6 +94,11 @@ func generateCSR(privKeyPath string, publicKeyPath string, csrPath string) {
 	}
 }
 
+type PkiSignRequest struct {
+	CertificateSigningRequest string `json:"csr"`
+	TimeToLive                string `json:"ttl"`
+}
+
 type PkiSignResponse struct {
 	Data struct {
 		CAChain      []string    `json:"ca_chain"`
@@ -102,20 +110,72 @@ type PkiSignResponse struct {
 }
 
 func signCertificate(csrPath string, certPath string, caPath string) {
-	if err := os.Setenv("VAULT_FORMAT", "json"); err != nil {
-		log.Fatalf("Unable to set environment variable: %v", err)
-	}
-	vaultWriteCmd := exec.Command("vault", "write", "pki/sign-verbatim/client", fmt.Sprintf("csr=@%s", csrPath), fmt.Sprintf("ttl=%d", 24*60*60 /* 24 hours */))
-	out, err := vaultWriteCmd.Output()
+	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		log.Fatalf("Failed to run `vault write` command: %v", err)
+		log.Fatalf("Unable to retrieve system-wide certificate authority trust store: %v", err)
+	}
+	serverCertCA, err := os.ReadFile(os.Getenv("VAULT_CACERT"))
+	if err != nil {
+		log.Fatalf("Vault server's certificate authority file could not be read: %v", err)
+	}
+	_ = certPool.AppendCertsFromPEM(serverCertCA)
+
+	vault := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: certPool,
+			},
+		},
+	}
+	var resp PkiSignResponse
+
+	csrContent, err := os.ReadFile(csrPath)
+	if err != nil {
+		log.Fatalf("Unable to read CSR content from filesystem: %v", err)
+	}
+	req := &PkiSignRequest{
+		CertificateSigningRequest: string(csrContent),
+		TimeToLive:                fmt.Sprintf("%d", 24*60*60),
+	}
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		log.Fatalf("Unable to marshal JSON in HTTP request to Vault: %v", err)
+	}
+	reqBuffer := bytes.NewBuffer(reqBytes)
+	request, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/pki/sign-verbatim/client", os.Getenv("VAULT_ADDR")), reqBuffer)
+	if err != nil {
+		log.Fatalf("Unable to queue up a PUT operation in the HTTP client: %v", err)
+	}
+	request.Header.Add("X-Vault-Token", os.Getenv("VAULT_TOKEN"))
+	respRaw, err := vault.Do(request)
+	if err != nil {
+		log.Fatalf("Unable to complete HTTP PUT operation against Vault: %v", err)
+	}
+	if respRaw.StatusCode != http.StatusOK {
+		log.Fatalf("Unexpected HTTP response from Vault: %s", respRaw.Status)
+	}
+	respBytes, err := io.ReadAll(respRaw.Body)
+	if err != nil {
+		log.Fatalf("Unable to read entire Vault response: %v", err)
+	}
+	err = json.Unmarshal(respBytes, &resp)
+	if err != nil {
+		log.Fatalf("Unable to unmarshal Vault response as valid JSON: %v", err)
 	}
 
-	var resp PkiSignResponse
-	err = json.Unmarshal(out, &resp)
-	if err != nil {
-		log.Fatalf("Unable to unmarshal JSON response from Vault: %v", err)
-	}
+	// if err := os.Setenv("VAULT_FORMAT", "json"); err != nil {
+	// 	log.Fatalf("Unable to set environment variable: %v", err)
+	// }
+	// vaultWriteCmd := exec.Command("vault", "write", "pki/sign-verbatim/client", fmt.Sprintf("csr=@%s", csrPath), fmt.Sprintf("ttl=%s", 24*60*60 /* 24 hours */))
+	// out, err := vaultWriteCmd.CombinedOutput()
+	// if err != nil {
+	// 	log.Fatalf("Failed to run `vault write` command: %v | %s", err, out)
+	// }
+
+	// err = json.Unmarshal(out, &resp)
+	// if err != nil {
+	// 	log.Fatalf("Unable to unmarshal JSON response from Vault: %v", err)
+	// }
 
 	if len(resp.Data.CAChain) == 0 {
 		log.Fatalln("No certificate authority chain was returned")
