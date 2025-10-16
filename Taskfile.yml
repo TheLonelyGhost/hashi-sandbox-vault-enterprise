@@ -111,6 +111,14 @@ tasks:
       - task: terraform:reset
       - task: vault:reset
       - task: unseal:reset
+      - task: tls:reset
+
+  tls:reset:
+    run: once
+    cmds:
+      - cmd: rm -rf tmp/tls/
+    status:
+      - '! test -f ./tmp/tls/*.pem'
 
   compose:down:
     run: once

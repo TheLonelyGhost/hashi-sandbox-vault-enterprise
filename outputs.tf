@@ -26,7 +26,7 @@ resource "local_sensitive_file" "env" {
   VAULT_SECRET_ID='${vault_approle_auth_backend_role_secret_id.sample.secret_id}'
 
   export VAULT_ADDR='${var.vault_addr}'
-  export VAULT_CACERT="$(pwd)/vault-config/server.ca.crt"
+  export VAULT_CACERT="./vault-config/server.ca.crt"
   export VAULT_CLIENT_TIMEOUT='10s'
   export VAULT_TLS_SERVERNAME='my-sandbox-cluster.localhost'
   EOH
