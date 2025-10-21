@@ -18,10 +18,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var (
 	oidEmailAddress = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 1}
+
+	oidCustomClearance      = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 311, 21, 8, 12, 1}
+	oidCustomClassification = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 311, 21, 8, 12, 2}
 )
 
 func generateCSR(privKeyPath string, publicKeyPath string, csrPath string) (err error) {
@@ -84,6 +88,16 @@ func generateCSR(privKeyPath string, publicKeyPath string, csrPath string) (err 
 				},
 			},
 		},
+		ExtraExtensions: []pkix.Extension{
+			{
+				Id:    oidCustomClearance,
+				Value: asn1Value("top-secret"),
+			},
+			{
+				Id:    oidCustomClassification,
+				Value: asn1Value("agent"),
+			},
+		},
 	}
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csr, privKey)
@@ -105,24 +119,45 @@ func generateCSR(privKeyPath string, publicKeyPath string, csrPath string) (err 
 	return
 }
 
+func asn1Value(value string) (out []byte) {
+	out, _ = asn1.Marshal(value)
+	return
+}
+
 func newVaultClient() (vault http.Client, err error) {
+	transport := &http.Transport{}
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		err = errors.Join(errors.New("unable to retrieve system-wide certificate authority trust store"), err)
 		return
 	}
-	serverCertCA, err := os.ReadFile(os.Getenv("VAULT_CACERT"))
-	if err != nil {
-		log.Fatalf("Vault server's certificate authority file could not be read: %v", err)
+	if _, ok := os.LookupEnv("VAULT_CACERT"); ok {
+		serverCertCA, err := os.ReadFile(os.Getenv("VAULT_CACERT"))
+		if err != nil {
+			log.Fatalf("Vault server's certificate authority file could not be read: %v", err)
+		}
+		_ = certPool.AppendCertsFromPEM(serverCertCA)
 	}
-	_ = certPool.AppendCertsFromPEM(serverCertCA)
+	transport.TLSClientConfig = &tls.Config{RootCAs: certPool}
+	if _, ok := os.LookupEnv("VAULT_CLIENT_TIMEOUT"); ok {
+		var timeout time.Duration
+		timeout, err = time.ParseDuration(os.Getenv("VAULT_CLIENT_TIMEOUT"))
+		if err != nil {
+			err = errors.Join(errors.New("failed to parse VAULT_CLIENT_TIMEOUT as a valid string for `time.Duration`"), err)
+			return
+		}
 
-	vault = http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: certPool,
-			},
-		},
+		// Technically, the client timeout is the full request. This includes timeout
+		// for establishing TCP connection until final bytes are read from the HTTP
+		// response body. Since there is no convenient parallel in `http.Client`, we
+		// will tie it to the next best available measure: start when last bytes sent
+		// in the HTTP request and stop when the HTTP response headers begin.
+		transport.ResponseHeaderTimeout = timeout
+	}
+
+	vault = http.Client{Transport: transport}
+	if _, ok := os.LookupEnv("VAULT_ADDR"); !ok {
+		err = errors.New("missing required environment variable, VAULT_ADDR")
 	}
 
 	return

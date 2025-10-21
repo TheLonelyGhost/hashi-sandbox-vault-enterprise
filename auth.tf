@@ -26,9 +26,40 @@ resource "vault_auth_backend" "tls" {
   path = "tls"
 }
 
-resource "vault_cert_auth_backend_role" "sample" {
-  backend = vault_auth_backend.tls.path
+# resource "vault_cert_auth_backend_role" "sample" {
+#   backend = vault_auth_backend.tls.path
+# 
+#   name        = "sample"
+#   certificate = vault_pki_secret_backend_root_cert.main.certificate
+# }
 
-  name        = "sample"
-  certificate = vault_pki_secret_backend_root_cert.main.certificate
+locals {
+  oidCustomClearance      = "1.3.6.1.4.1.311.21.8.12.1"
+  oidCustomClassification = "1.3.6.1.4.1.311.21.8.12.2"
+}
+
+resource "vault_generic_endpoint" "cert_config" {
+  path = "auth/${vault_auth_backend.tls.path}/config"
+
+  data_json = jsonencode({
+    enable_metadata_on_failures    = true
+    enable_identity_alias_metadata = true
+  })
+}
+
+resource "vault_generic_endpoint" "sample_cert" {
+  path = "auth/${vault_auth_backend.tls.path}/certs/sample"
+
+  data_json = jsonencode({
+    certificate = vault_pki_secret_backend_root_cert.main.certificate
+
+    allowed_metadata_extensions = [
+      local.oidCustomClearance,
+      local.oidCustomClassification,
+    ]
+
+    token_policies = [
+      vault_policy.templated_tls.name,
+    ]
+  })
 }

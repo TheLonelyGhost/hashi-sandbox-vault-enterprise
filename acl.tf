@@ -40,3 +40,30 @@ resource "vault_policy" "kv-monitor" {
   name   = "kv-monitor"
   policy = data.vault_policy_document.kv-monitor.hcl
 }
+
+
+data "vault_policy_document" "templated_tls" {
+  rule {
+    path         = "${vault_mount.kv.path}/metadata/*"
+    capabilities = ["list", "read"]
+  }
+
+  rule {
+    # @see https://developer.hashicorp.com/vault/tutorials/policies/policy-templating#available-templating-parameters
+    description  = "Class-specific read/write/delete access"
+    path         = "${vault_mount.kv.path}/data/class/{{ identity.entity.aliases.${vault_auth_backend.tls.accessor}.metadata.${replace(local.oidCustomClassification, ".", "-")} }}/*"
+    capabilities = ["create", "read", "update", "delete"]
+  }
+
+  rule {
+    # @see https://developer.hashicorp.com/vault/tutorials/policies/policy-templating#available-templating-parameters
+    description  = "Clearance-specific read/write/delete access"
+    path         = "${vault_mount.kv.path}/data/clearance/{{ identity.entity.aliases.${vault_auth_backend.tls.accessor}.metadata.${replace(local.oidCustomClearance, ".", "-")} }}/*"
+    capabilities = ["read"]
+  }
+}
+resource "vault_policy" "templated_tls" {
+  name = "templated-tls-auth"
+
+  policy = data.vault_policy_document.templated_tls.hcl
+}
