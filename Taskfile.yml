@@ -118,7 +118,7 @@ tasks:
     cmds:
       - cmd: rm -rf tmp/tls/
     status:
-      - '! test -f ./tmp/tls/server.certificate.pem'
+      - '! test -f ./tmp/tls/client.certificate.pem'
 
   compose:down:
     run: once
