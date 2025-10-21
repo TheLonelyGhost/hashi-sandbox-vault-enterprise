@@ -13,7 +13,7 @@ output "shamir_keys" {
 }
 
 resource "local_sensitive_file" "unseal_hcl" {
-  content         = <<EOH
+  content         = <<-EOH
   seal "transit" {
     disable_renewal = "true"
     token           = "${vaultstarter_init.base.root_token}"
