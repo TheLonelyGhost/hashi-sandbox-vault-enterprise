@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-- Taskfile.dev
-- Go (required to generate client TLS cert in this specific demo)
+- [`task` runner](https://taskfile.dev)
+- Go (v1.25+ preferred) -- required to easily generate client TLS cert
 - Terraform CLI (v1.10 or higher)
-- Docker Compose via `docker` binary (may be linked to podman backend)
+- Docker Compose via `docker` binary (may be linked to a Podman backend)
 - HashiCorp Vault Enterprise license
 - Linux-like workstation (WSL is acceptable)
 
