@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${1:?Must include a postgres username}"
+: "${2:?Must include a postgres password}"
+
+: "${POSTGRES_DB?Must include a postgres database target}"
+
+podman run --rm -it -e PGPASSWORD="$2" --network hashi-sandbox-vault-enterprise_default docker.io/library/postgres:17 psql -h postgres -U "$1" -d "${POSTGRES_DB}"
