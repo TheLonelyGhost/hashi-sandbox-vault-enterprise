@@ -13,14 +13,24 @@ output "shamir_keys" {
 }
 
 resource "local_sensitive_file" "unseal_hcl" {
-  content         = <<EOH
-  seal "transit" {
-    disable_renewal = "true"
-    token           = "${vaultstarter_init.base.root_token}"
+  # content         = <<EOH
+  # seal "transit" {
+  #   disable_renewal = "true"
+  #   token           = "${vaultstarter_init.base.root_token}"
 
-    key_name   = "${vault_transit_secret_backend_key.unseal.name}"
-    mount_path = "${vault_transit_secret_backend_key.unseal.backend}"
-    address    = "http://vault-unseal:8300"
+  #   key_name   = "${vault_transit_secret_backend_key.unseal.name}"
+  #   mount_path = "${vault_transit_secret_backend_key.unseal.backend}"
+  #   address    = "http://vault-unseal:8300"
+  # }
+  # EOH
+  content         = <<EOH
+  seal "pkcs11" {
+    lib             = "/usr/local/lib/libpkcs11-proxy.so"
+    token_label     = "Test Token"
+    pin             = "1234"
+    key_label       = "VaultUnseal"
+    hmac_key_label  = "VaultHMAC"
+    generate_key    = "true"
   }
   EOH
   file_permission = "0600"

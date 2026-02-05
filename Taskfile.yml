@@ -119,10 +119,18 @@ tasks:
     status:
       - test -z "$(docker compose ps --format json)"
 
+  vault:server:build:
+    run: once
+    dir: docker/
+    cmds:
+      - cmd: podman build --pull=always --platform linux/amd64,linux/arm64 --tag docker.io/thelonelyghost/vault-enterprise:1.19-ent -f ./vault-server.Dockerfile .
+    interactive: true
+
   compose:up:
     run: once
     deps:
       - unseal:up
+      - vault:server:build
     cmds:
       - cmd: mkdir -p ./vault-data ./vault-config ./logs
       - cmd: docker compose up -d
