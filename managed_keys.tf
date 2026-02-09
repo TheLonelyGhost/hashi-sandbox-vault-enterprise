@@ -150,13 +150,13 @@ resource "vault_pki_secret_backend_intermediate_cert_request" "untrusted" {
 # }
 
 
-output "intermediate_csr" {
-  description = "Intermediate Certificate Authority's Certificate Signing Request for the Root CA"
-  value = {
-    "trusted"   = vault_pki_secret_backend_intermediate_cert_request.trusted.csr
-    "untrusted" = vault_pki_secret_backend_intermediate_cert_request.untrusted.csr
-  }
-}
+# output "intermediate_csr" {
+#   description = "Intermediate Certificate Authority's Certificate Signing Request for the Root CA"
+#   value = {
+#     "trusted"   = vault_pki_secret_backend_intermediate_cert_request.trusted.csr
+#     "untrusted" = vault_pki_secret_backend_intermediate_cert_request.untrusted.csr
+#   }
+# }
 
 resource "vault_pki_secret_backend_intermediate_set_signed" "trusted" {
   backend = vault_mount.pki.path
@@ -189,9 +189,9 @@ resource "vault_pki_secret_backend_config_issuers" "pki" {
   default_follows_latest_issuer = false
 }
 
-# output "intermediate_issuers" {
-#   value = {
-#     "trusted"   = vault_pki_secret_backend_intermediate_set_signed.trusted.imported_issuers
-#     "untrusted" = vault_pki_secret_backend_intermediate_set_signed.untrusted.imported_issuers
-#   }
-# }
+output "intermediate_issuers" {
+  value = {
+    "trusted"   = vault_pki_secret_backend_issuer.trusted.issuer_id
+    "untrusted" = vault_pki_secret_backend_issuer.untrusted.issuer_id
+  }
+}
