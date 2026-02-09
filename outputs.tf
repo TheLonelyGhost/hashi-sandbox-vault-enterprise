@@ -14,7 +14,7 @@ output "root_token" {
 
 output "recovery_keys" {
   description = "Recovery keys"
-  value       = nonsensitive(vaultoperator_init.base.recovery_keys)
+  value       = nonsensitive(local.init.recovery_keys_hex)
 
   depends_on = [terraform_data.root_token]
 }

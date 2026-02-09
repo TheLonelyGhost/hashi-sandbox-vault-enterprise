@@ -56,6 +56,28 @@ tasks:
   unseal:compose:up:
     run: once
     cmds:
+      - task: unseal:compose:up:vault
+      - task: unseal:compose:up:hsm
+    silent: true
+    status:
+      - test -n "$(docker compose ps --format json)"
+
+  unseal:compose:up:hsm:
+    run: once
+    cmds:
+      - cmd: docker compose up -d softhsm-server
+      # - cmd: |
+      #     sleep 1 # Give it a moment to start the process fully
+      #     docker compose exec softhsm-server pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --token-label 'Test Token' --pin 1234 --keypairgen --key-type EC:prime256v1 --id 1001 --label 'VaultUnseal'
+      #     docker compose exec softhsm-server pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --token-label 'Test Token' --pin 1234 --keypairgen --key-type EC:prime256v1 --id 1002 --label 'VaultHMAC'
+    silent: true
+    # status:
+    #   - test 2 -eq "$(docker compose exec softhsm-server pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --token-label 'Test Token' --pin 1234 --list-objects | grep 'label.*VaultUnseal' | wc -l)"
+    #   - test 2 -eq "$(docker compose exec softhsm-server pkcs11-tool --module /usr/local/lib/softhsm/libsofthsm2.so --token-label 'Test Token' --pin 1234 --list-objects | grep 'label.*VaultHMAC' | wc -l)"
+
+  unseal:compose:up:vault:
+    run: once
+    cmds:
       - cmd: mkdir -p ./vault-alt-data ./vault-alt-config
       - cmd: docker compose up -d vault-unseal
       - cmd: |
@@ -70,7 +92,6 @@ tasks:
           exit 1
     silent: true
     status:
-      - test -n "$(docker compose ps --format json)"
       - 'curl --connect-timeout 10 --fail --silent "http://127.0.0.1:8300/v1/sys/health?uninitcode=200&sealedcode=200"'
 
   unseal:reset:
@@ -130,7 +151,7 @@ tasks:
     run: once
     deps:
       - unseal:up
-      - vault:server:build
+      # - vault:server:build
     cmds:
       - cmd: mkdir -p ./vault-data ./vault-config ./logs
       - cmd: docker compose up -d
@@ -138,6 +159,7 @@ tasks:
           sleep 1 # Give it a moment to start listening on the port
           for i in {1..5}; do
             if curl --connect-timeout 10 --fail --cacert ./vault-config/server.ca.crt --silent "https://127.0.0.1:8200/v1/sys/health?uninitcode=200" >/dev/null 2>/dev/null; then
+              sleep 4
               exit 0
             fi
             sleep 1
@@ -153,10 +175,11 @@ tasks:
     deps:
       - terraform:reset
     cmds:
-      - cmd: rm -rf ./logs/audit.log ./vault-data
+      - cmd: rm -rf ./logs/audit.log ./vault-data ./init.json
     status:
       - '! test -d ./vault-data'
       - '! test -f ./logs/audit.log'
+      - '! test -f ./init.json'
 
   terraform:reset:
     cmds:
@@ -173,5 +196,11 @@ tasks:
       - compose:up
     cmds:
       - cmd: terraform init
+      - cmd: env VAULT_SKIP_VERIFY=1 VAULT_ADDR=https://127.0.0.1:8200 VAULT_FORMAT=json vault operator init -recovery-shares=1 -recovery-threshold=1 > init.json
     status:
       - 'test -d ./.terraform'
+
+  test:
+    cmds:
+      - cmd: vault read sys/managed-keys/pkcs11/example-key
+      - cmd: vault write -f sys/managed-keys/pkcs11/example-key/test/sign

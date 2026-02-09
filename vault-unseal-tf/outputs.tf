@@ -32,6 +32,11 @@ resource "local_sensitive_file" "unseal_hcl" {
     hmac_key_label  = "VaultHMAC"
     generate_key    = "true"
   }
+
+  kms_library "pkcs11" {
+    name    = "softhsm-server"
+    library = "/usr/local/lib/libpkcs11-proxy.so"
+  }
   EOH
   file_permission = "0600"
 

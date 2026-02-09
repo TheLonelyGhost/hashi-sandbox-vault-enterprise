@@ -40,25 +40,3 @@ provider "registry.terraform.io/hashicorp/vault" {
     "zh:e9e37b61a3d9c3471e9486ecb944e12b091c3d53cabbc324b593363f77be046c",
   ]
 }
-
-provider "registry.terraform.io/rickardgranberg/vaultoperator" {
-  version     = "0.1.11"
-  constraints = "~> 0.1.11"
-  hashes = [
-    "h1:2J8KvU+HCkBSnLivWtF1r1RJE0Hy2nK+XDhXKu+PU0w=",
-    "zh:01eb8cb0963e5c5713b173af2777ce7bb8480faaa60ebcdae52a547654e9dbaf",
-    "zh:148770e8a6e721f3c083f24667ec38218f7780746cff1b547b2986f4e9d15cf8",
-    "zh:2735f4e9ccdae8fdfe85b625bf5bdd4de5fb51184e47b632861bb1ae51cae400",
-    "zh:46fc8f80ee4d6c2593003590f5c94285d833ce00a4e205a74b1e3d79a724d014",
-    "zh:4ca6239c3d3b5caf29df88fedd38dbc269aa7c596899c963b2e9aee5e0c66a73",
-    "zh:619788e120071a2290c81d2eadd5d1f22679ade67a5ff52f6e7c3cff60ed57ec",
-    "zh:91eaf6e7557349d4c455c2e5c9c4c5b3a44a9ab63d6c67cdae4901ef5a488d10",
-    "zh:95432d950950fa21a23ae47b85c92a33290b8881c3321f16a0349f63728e28fc",
-    "zh:9ce9e2e8012573a0816a672427fd2d1f2e900396f09933816685777a469b50f0",
-    "zh:a352fd67b303ca3636a085f11b176c63f715dbe93f680117134be13fe614dbc9",
-    "zh:aee6317c46e7f74feab318fdc61c9bc1f3a15faa6cf2a4f1ca63d51af4abb338",
-    "zh:b77583da33572ba825afafd360629b2a07e5149f5816183deae1d8dc5d269a27",
-    "zh:bf5b8377cdda490b51401f374a671d3e80a7659c588e8dad79fce0c1c0c17fbc",
-    "zh:c4fb2a0c167e4a60346b897e7ae0da8d89eb22d3952591160a2b49ca5d9b0471",
-  ]
-}

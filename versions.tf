@@ -10,27 +10,19 @@ terraform {
       source  = "hashicorp/vault"
       version = "~> 5.0"
     }
-    vaultoperator = {
-      source  = "rickardgranberg/vaultoperator"
-      version = "~> 0.1.11"
-    }
+    # vaultoperator = {
+    #   source  = "rickardgranberg/vaultoperator"
+    #   version = "~> 0.1.11"
+    # }
   }
 }
 
-provider "vaultoperator" {
-  vault_addr        = var.vault_addr
-  vault_skip_verify = true
-}
-
-resource "vaultoperator_init" "base" {
-  recovery_shares    = 1
-  recovery_threshold = 1
-  secret_shares      = 0
-  secret_threshold   = 0
+locals {
+  init = jsondecode(file("${path.module}/init.json"))
 }
 
 resource "terraform_data" "root_token" {
-  input = vaultoperator_init.base.root_token
+  input = local.init.root_token
 }
 
 provider "vault" {
