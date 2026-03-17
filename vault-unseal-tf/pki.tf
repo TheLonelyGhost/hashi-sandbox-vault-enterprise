@@ -80,7 +80,7 @@ resource "vault_pki_secret_backend_cert" "vault" {
   name    = vault_pki_secret_backend_role.server.name
 
   common_name = "my-sandbox-cluster.local"
-  alt_names   = ["localhost"]
+  alt_names   = ["localhost", "vault"]
   ip_sans     = ["127.0.0.1"]
 
   ttl = 90 * 24 * 60 * 60 # 90 days
